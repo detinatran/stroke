@@ -1,0 +1,7 @@
+Design: 2x5-fold repeated cross-fitting, seed 42; n = 469, sICH = 65; 200 bootstrap resamples (primary inference); IF-based intervals under-covered in simulation
+Admission systolic BP: −20 mmHg, not below 140 -> risk 12.4% vs 13.9%, RD -1.41 pp, bootstrap 95% CI [-3.19, +0.14], bootstrap p=0.060 (IF-based [-2.72, -0.10])
+Admission glucose: −2 mmol/L, not below 7.8 -> risk 13.4% vs 14.0%, RD -0.53 pp, bootstrap 95% CI [-1.38, +0.14], bootstrap p=0.160 (IF-based [-1.13, +0.07])
+Door-to-groin time: −30 min, not below 60 -> risk 13.1% vs 13.9%, RD -0.73 pp, bootstrap 95% CI [-3.24, +1.46], bootstrap p=0.410 (IF-based [-2.39, +0.94])
+Bridging thrombolysis: all treated -> risk 16.3% vs 13.9%, RD +2.42 pp, bootstrap 95% CI [-4.95, +10.24], bootstrap p=0.700 (IF-based [-3.41, +8.26])
+Bridging thrombolysis: none treated -> risk 14.3% vs 13.9%, RD +0.43 pp, bootstrap 95% CI [-2.72, +2.90], bootstrap p=0.870 (IF-based [-1.74, +2.59])
+Bridging thrombolysis: treated vs untreated -> risk 16.3% vs 14.3%, RD +1.99 pp, bootstrap 95% CI [-6.94, +11.45], bootstrap p=0.830 (IF-based [-5.48, +9.47])

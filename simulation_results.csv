@@ -1,0 +1,7 @@
+Scenario,Truth_pp,Variant,Bias_pp,SD_pp,IF_coverage,Gcomp_bias_pp,Replicates,n
+linear,-4.269,"truncated 0.99, raw ratio (used)",-0.224,1.345,0.82,0.038,50,470
+linear,-4.269,"truncated 0.99, normalised ratio",-0.315,1.377,0.84,0.038,50,470
+linear,-4.269,"untruncated, normalised ratio",-0.340,1.395,0.84,0.038,50,470
+non-linear,-5.665,"truncated 0.99, raw ratio (used)",0.073,1.562,0.80,0.414,50,470
+non-linear,-5.665,"truncated 0.99, normalised ratio",-0.039,1.612,0.76,0.414,50,470
+non-linear,-5.665,"untruncated, normalised ratio",-0.070,1.653,0.76,0.414,50,470

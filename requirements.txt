@@ -1,0 +1,18 @@
+numpy
+pandas
+scipy
+matplotlib
+networkx
+openpyxl
+scikit-learn>=1.4
+imbalanced-learn
+xgboost
+lightgbm
+catboost
+causal-learn
+econml
+dowhy
+dice-ml
+joblib
+pillow
+# optional: fasterrisk (integer score optimiser; falls back to built-in optimiser if absent)

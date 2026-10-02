@@ -1,0 +1,12 @@
+# patient-level data must never be committed
+*.xlsx
+*.xls
+*.csv.gz
+outputs_counterfactual/cf_individual_changes.csv
+outputs_counterfactual/fold_assignment.csv
+_smoke/
+outputs/
+cf_run.log
+__pycache__/
+*.pyc
+.DS_Store

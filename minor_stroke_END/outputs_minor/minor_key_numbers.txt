@@ -1,0 +1,6 @@
+Minor stroke cohort: n = 932, END = 123; 2x5 cross-fitting; 200 bootstrap resamples
+Admission systolic BP: −20 mmHg, not below 140 -> 12.0% vs 13.2%, RD -1.23 pp, bootstrap 95% CI [-2.69, -0.18]
+Admission glucose: −2 mmol/L, not below 7.8 -> 12.8% vs 13.2%, RD -0.39 pp, bootstrap 95% CI [-0.87, +0.14]
+Dual antiplatelet therapy: everyone on DAPT -> 8.3% vs 13.2%, RD -4.89 pp, bootstrap 95% CI [-6.45, -2.69]
+Dual antiplatelet therapy: no one on DAPT -> 23.5% vs 13.2%, RD +10.29 pp, bootstrap 95% CI [+3.92, +17.81]
+Dual antiplatelet therapy: DAPT vs no DAPT -> 8.3% vs 23.5%, RD -15.18 pp, bootstrap 95% CI [-23.16, -7.99]

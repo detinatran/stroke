@@ -186,3 +186,8 @@ unmeasured confounding given the adjustment sets; E-values are modest (≈1.2–
 measured admission values and do not correspond to a specific treatment protocol; admission BP is
 distinct from the post-reperfusion BP targets tested in randomised trials. Within-stratum intervals
 are influence-function based and likely too narrow.
+
+## Second cohort: END after minor stroke
+
+The same estimators applied to early neurological deterioration in 932 patients with minor ischaemic
+stroke are in [`minor_stroke_END/`](minor_stroke_END/README.md).

@@ -1,13 +1,17 @@
-# Counterfactual effects on early neurological deterioration (END) after minor stroke
+# Counterfactual explanations and causal effects for early neurological deterioration (END) after minor stroke
 
-Causal counterfactual analysis of **early neurological deterioration (END)** in patients with minor
-ischaemic stroke: *what would the END risk have been if admission blood pressure, glucose or dual
-antiplatelet therapy had been managed differently?*
+Two analyses of **early neurological deterioration (END)** in patients with minor ischaemic stroke:
 
-The analysis re-uses the estimators in [`../sich_counterfactual.py`](../sich_counterfactual.py):
-modified treatment policies (MTPs) with a cross-fitted **doubly robust** one-step estimator, a
-classification-based density ratio, AIPW for binary treatments, and a nonparametric **bootstrap**
-of the whole procedure (200 resamples).
+* **Machine-learning counterfactual explanations with a causal check** ([`minor_ce.py`](minor_ce.py)):
+  what would a risk model need to see changed in admission blood pressure or glucose, and would that
+  change actually lower END risk?
+* **Causal counterfactual policies** ([`minor_stroke_counterfactual.py`](minor_stroke_counterfactual.py)):
+  what would END risk have been if admission blood pressure, glucose or dual antiplatelet therapy had been
+  managed differently?
+
+Both re-use the estimators in [`../sich_counterfactual.py`](../sich_counterfactual.py): modified treatment
+policies (MTPs) with a cross-fitted **doubly robust** one-step estimator, a classification-based density
+ratio, AIPW for binary treatments, and a nonparametric **bootstrap** (200 resamples).
 
 > **Data are not included.** The cohort contains patient-level clinical data and is not public.
 > Place the dataset as `data_minor_stroke.xlsx` in this folder (or set `MINOR_DATA`) to reproduce.
@@ -28,7 +32,49 @@ of the whole procedure (200 resamples).
   5-fold stratified cross-fitting × 2 repeats, median aggregation; density ratio truncated at the
   99th percentile; propensities bounded to [0.02, 0.98].
 
-## Results
+## Counterfactual explanations with causal validation
+
+Machine-learning counterfactual explanations say what a risk model would need to see changed; they do not
+say whether that change would lower the patient's real risk. [`minor_ce.py`](minor_ce.py) checks this:
+
+1. **Risk model.** LightGBM (reference: L2-logistic regression) on 93 baseline and admission variables
+   (no in-hospital treatment, nothing after END; diastolic BP left out because it moves with systolic BP),
+   5-fold CV repeated twice. High-risk threshold = Youden's index on out-of-fold predictions.
+2. **Counterfactual explanations** (Wachter et al. 2017) for every out-of-fold high-risk patient: the
+   smallest MAD-weighted L1 decrease of admission systolic BP (not below 140 mmHg) and glucose (not below
+   7.8 mmol/L) that brings the model's risk below the threshold, all other variables fixed. The action
+   space is 2-D, so the optimum is found exactly by exhaustive search (1 mmHg × 0.1 mmol/L grid).
+3. **Causal check.** The explanations define a patient-specific policy (flagged patients get their
+   explanation values, everyone else keeps the observed values). Its effect on END risk is estimated with
+   the cross-fitted doubly robust MTP estimator (2-D exposure) and 200 bootstrap resamples (explanations
+   held fixed), and compared with the reduction the model promises.
+
+| Step | Result |
+|---|---|
+| Risk model | LightGBM AUC 0.64, AUPRC 0.22, Brier 0.112, calibration slope 0.61 (logistic AUC 0.58) |
+| High-risk patients (threshold 0.156) | 229 (54 with END) |
+| Explanation found | 77 / 229 (34%); 44 already at or below both floors, 108 with no permitted change that works |
+| Changes asked for | 71 lower SBP (median 20 mmHg, IQR 11–30), 23 lower glucose (median 1.2 mmol/L), 17 both |
+| Model's predicted risk, recipients | 20.0% → 14.7%: **promised −5.3 pp per recipient** |
+
+| Policy | Patients changed | Cohort change (pp) | Bootstrap 95% CI | Per recipient (pp) |
+|---|---|---|---|---|
+| Explanations: both factors | 77 (8.3%) | −0.28 | −0.58 to −0.06 | **−3.4** (−7.0 to −0.7) |
+| Explanations: SBP part only | 71 (7.6%) | −0.22 | −0.49 to −0.03 | −2.7 |
+| Explanations: glucose part only | 23 (2.5%) | −0.03 | −0.21 to +0.02 | −0.4 |
+
+The causal estimate confirms a reduction, driven by the blood-pressure part, but its point estimate is
+about two-thirds of what the model promises (the interval still includes the promise); the glucose part
+has little causal support. Patient-level model and causal changes correlate only moderately (r = 0.38).
+Effective sample size 927 of 932, so positivity is not a concern.
+
+![Counterfactual explanations and causal check](figures/Figure_ce.png)
+
+*(A) Decreases asked for by the explanations. (B) Risk reduction per recipient promised by the model
+versus the doubly robust causal estimate. (C) Whole-cohort policy "SBP −δ, not below 140 mmHg".
+Bootstrap 95% CIs.*
+
+## Whole-cohort policies and DAPT (causal analysis)
 
 Risk differences are in **percentage points (pp)** versus the natural course (13.2%).
 **Bootstrap 95% CIs** are the primary inference; influence-function (IF) CIs are shown for comparison.
@@ -106,11 +152,16 @@ violates positivity.
 pip install -r ../requirements.txt
 python minor_stroke_counterfactual.py                 # ~20 min on 8 cores; SICH_QUICK=1 SICH_BOOT=30 for a smoke test
 python minor_figures.py outputs_minor figures
+python minor_ce.py                                    # ~7 min on 8 cores; SICH_BOOT=30 for a quick run
+python ce_figures.py outputs_ce outputs_minor figures # panel A needs the local, patient-level ce_individual.csv
 ```
 
 | File | Content |
 |---|---|
 | `minor_stroke_counterfactual.py` | data loading, temporal tiers, MTPs, AIPW for DAPT, ablations, strata |
 | `minor_figures.py` | Figures 1–2 (12.4 cm wide, print-ready) |
+| `minor_ce.py` | risk model, counterfactual explanations, causal check of the explanation policy |
+| `ce_figures.py` | counterfactual-explanation figure |
+| `outputs_ce/` | aggregate results only (`ce_individual.csv` is patient-level and git-ignored) |
 | `outputs_minor/` | aggregate results only (no patient-level rows) |
 | `figures/` | PNG (600 dpi) and PDF figures |

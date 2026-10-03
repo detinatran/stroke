@@ -190,4 +190,5 @@ are influence-function based and likely too narrow.
 ## Second cohort: END after minor stroke
 
 The same estimators applied to early neurological deterioration in 932 patients with minor ischaemic
-stroke are in [`minor_stroke_END/`](minor_stroke_END/README.md).
+stroke, together with machine-learning counterfactual explanations checked against the causal estimate,
+are in [`minor_stroke_END/`](minor_stroke_END/README.md).

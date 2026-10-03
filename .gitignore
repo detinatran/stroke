@@ -10,3 +10,7 @@ cf_run.log
 __pycache__/
 *.pyc
 .DS_Store
+
+# patient-level counterfactual explanations
+minor_stroke_END/outputs_ce/ce_individual.csv
+minor_stroke_END/ce_run.log

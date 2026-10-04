@@ -2,9 +2,9 @@
 
 Two analyses of **early neurological deterioration (END)** in patients with minor ischaemic stroke:
 
-* **Machine-learning counterfactual explanations with a causal check** ([`minor_ce.py`](minor_ce.py)):
-  what would a risk model need to see changed in admission blood pressure or glucose, and would that
-  change actually lower END risk?
+* **Machine-learning counterfactual explanations with a causal check** ([`minor_ce_v5.py`](minor_ce_v5.py),
+  main; [`minor_ce.py`](minor_ce.py), first version): what would a risk model need to see changed in
+  admission blood pressure or glucose, and would that change actually lower END risk?
 * **Causal counterfactual policies** ([`minor_stroke_counterfactual.py`](minor_stroke_counterfactual.py)):
   what would END risk have been if admission blood pressure, glucose or dual antiplatelet therapy had been
   managed differently?
@@ -32,7 +32,51 @@ ratio, AIPW for binary treatments, and a nonparametric **bootstrap** (200 resamp
   5-fold stratified cross-fitting × 2 repeats, median aggregation; density ratio truncated at the
   99th percentile; propensities bounded to [0.02, 0.98].
 
-## Counterfactual explanations with causal validation
+## Main result: goal-based interventional counterfactual explanations (`minor_ce_v5.py`)
+
+Threshold explanations (smallest change that pushes a flagged patient just below a risk threshold) reached
+only ~12% of patients. Version 5 keeps the causal machinery and changes the **objective** of the
+explanation:
+
+1. **Risk model.** XGBoost on 94 baseline and admission variables, monotone in admission systolic BP (SBP)
+   and glucose, Platt-recalibrated on inner out-of-fold predictions (AUC 0.64, calibration slope
+   1.01; uncalibrated XGBoost: AUC 0.64, slope 0.53).
+2. **Interventional explanations** (Karimi et al. 2021). Lowering SBP or glucose is an intervention in a
+   structural causal model: diastolic BP, the only input downstream of the actionable factors, follows an
+   additive-noise equation DBP = β·SBP + h(baseline) + u (β = 0.37, R² = 0.43), so
+   DBP′ = DBP + β(SBP′ − SBP). Values are only lowered, never below 140 mmHg / 7.8 mmol/L.
+3. **Objectives.** *Threshold*: flagged patients (risk ≥ Youden threshold) get the smallest change that
+   brings risk below the threshold. *Goal −ρ*: **every** patient with room above a floor gets the smallest
+   change that lowers predicted risk by at least ρ (10/20/30%, pre-specified).
+4. **Causal evaluation.** Every policy (models, thresholds, explanations, tree) is learned inside training
+   folds of 5-fold cross-fitting (median of 10 splits) and applied to held-out patients; its effect is
+   estimated with the doubly robust MTP estimator; CIs from 200 bootstrap resamples that repeat the whole
+   procedure (nested bootstrap).
+
+| Policy | Patients changed | Cohort change, pp (95% CI) | Per recipient, pp (95% CI) | Model promise, pp |
+|---|---|---|---|---|
+| CE, threshold (uncalibrated model) | 118 (13%) | −0.36 (−0.78 to −0.001) | −2.8 (−6.3 to −0.02) | −4.3 |
+| CE, threshold | 116 (12%) | −0.36 (−0.79 to −0.01) | −2.9 (−6.0 to −0.1) | −2.1 |
+| **CE, goal −10%** | 391 (42%) | −1.12 (−2.01 to −0.02) | −2.7 (−6.0 to −0.1) | −1.8 |
+| CE, goal −20% | 180 (19%) | −0.84 (−1.73 to +0.17) | −4.3 (−12.0 to +5.4) | −3.3 |
+| CE, goal −30% | 58 (6%) | −0.31 (−1.15 to +0.15) | −5.0 (−16.7 to +14.0) | −4.9 |
+| Policy tree (DR-learned) | 470 (50%) | −1.41 (−2.74 to −0.21) | −2.8 (−5.1 to −0.5) | — |
+| Rule: SBP −20, floor 140 | 524 (56%) | −1.28 (−2.50 to −0.01) | −2.3 (−4.4 to −0.03) | — |
+
+Natural-course END risk 13.2%. Explanations from the recalibrated model are causally faithful (promise
+consistent with the causal estimate). Re-targeting them to a 10% relative risk reduction extends
+recommendations from 12% to 42% of patients and lowers cohort END risk by
+1.12 pp, about four fifths of the policy tree; the gain over threshold explanations
+(0.76 pp, 95% CI −0.16 to 1.45) does not exclude zero. Stricter targets are feasible for
+fewer patients and are imprecise.
+
+![Goal-based interventional explanations](figures/Figure_ce_v5.png)
+
+*(A) Causal change in END risk for the whole cohort under each policy. (B) Risk reduction per recipient
+promised by the model versus the doubly robust causal estimate. (C) Calibration by decile.
+Nested-bootstrap 95% CIs.*
+
+## Earlier version: threshold explanations held fixed (`minor_ce.py`)
 
 Machine-learning counterfactual explanations say what a risk model would need to see changed; they do not
 say whether that change would lower the patient's real risk. [`minor_ce.py`](minor_ce.py) checks this:
@@ -152,7 +196,9 @@ violates positivity.
 pip install -r ../requirements.txt
 python minor_stroke_counterfactual.py                 # ~20 min on 8 cores; SICH_QUICK=1 SICH_BOOT=30 for a smoke test
 python minor_figures.py outputs_minor figures
-python minor_ce.py                                    # ~7 min on 8 cores; SICH_BOOT=30 for a quick run
+python minor_ce.py                                    # first version, ~7 min on 8 cores
+SICH_REPEATS=10 python -c "import minor_ce_v5; minor_ce_v5.main()"   # main analysis, ~26 min on 8 cores
+python ce_v5_figures.py                               # Figure_ce_v5
 python ce_figures.py outputs_ce outputs_minor figures # panel A needs the local, patient-level ce_individual.csv
 ```
 
@@ -160,7 +206,10 @@ python ce_figures.py outputs_ce outputs_minor figures # panel A needs the local,
 |---|---|
 | `minor_stroke_counterfactual.py` | data loading, temporal tiers, MTPs, AIPW for DAPT, ablations, strata |
 | `minor_figures.py` | Figures 1–2 (12.4 cm wide, print-ready) |
-| `minor_ce.py` | risk model, counterfactual explanations, causal check of the explanation policy |
+| `minor_ce_v5.py` | main analysis: recalibrated XGBoost, interventional explanations (threshold and goal objectives), policy tree, nested bootstrap |
+| `ce_v5_figures.py` | Figure_ce_v5 |
+| `outputs_ce_v5/` | aggregate results of the main analysis (policies, model performance, calibration deciles, tree leaves) |
+| `minor_ce.py` | first version (explanations held fixed in the bootstrap); also provides shared helpers for `minor_ce_v5.py` |
 | `ce_figures.py` | counterfactual-explanation figure |
 | `outputs_ce/` | aggregate results only (`ce_individual.csv` is patient-level and git-ignored) |
 | `outputs_minor/` | aggregate results only (no patient-level rows) |
